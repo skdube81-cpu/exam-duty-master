@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Exam Duty Master (GitHub Pages)</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">ED</div>
+      <div>
+        <div class="title">Exam Duty Master</div>
+        <div class="subtitle">Master architecture • GitHub Pages • No backend</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="btnBackupJson">Backup (JSON)</button>
+      <label class="btn ghost filebtn">
+        Restore (JSON)
+        <input type="file" id="fileRestoreJson" accept="application/json" />
+      </label>
+      <button class="btn danger" id="btnResetAll">Reset All</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="faculty">Faculty</button>
+    <button class="tab" data-tab="schedule">Schedule</button>
+    <button class="tab" data-tab="assign">Assign</button>
+    <button class="tab" data-tab="reports">Reports</button>
+  </nav>
+
+  <main class="container">
+
+    <section class="panel active" id="tab-faculty">
+      <div class="grid2">
+        <div class="card">
+          <h2>Faculty Master</h2>
+          <div class="row">
+            <input id="facultySearch" class="input" placeholder="Search faculty..." />
+            <button class="btn" id="btnFacultyExportCsv">Export Faculty CSV</button>
+          </div>
+          <div class="tablewrap">
+            <table class="table" id="facultyTable">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Active</th>
+                  <th class="right">Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p class="muted">Inactive faculty are excluded from assignment.</p>
+        </div>
+
+        <div class="card">
+          <h2>Add / Import Faculty</h2>
+          <div class="row">
+            <input id="facultyName" class="input" placeholder="Faculty name" />
+            <label class="check">
+              <input type="checkbox" id="facultyActive" checked />
+              Active
+            </label>
+          </div>
+          <textarea id="facultyNotes" class="input" rows="3" placeholder="Notes (optional)"></textarea>
+          <button class="btn primary" id="btnFacultyAdd">Add Faculty</button>
+
+          <hr />
+          <h3>Bulk Import (one name per line)</h3>
+          <textarea id="facultyBulk" class="input" rows="6" placeholder="Paste names here..."></textarea>
+          <div class="row">
+            <button class="btn" id="btnFacultyBulkAdd">Add All</button>
+            <button class="btn ghost" id="btnFacultyBulkClear">Clear</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="tab-schedule">
+      <div class="grid2">
+        <div class="card">
+          <h2>Schedule Master</h2>
+          <div class="row">
+            <button class="btn" id="btnScheduleExportCsv">Export Schedule CSV</button>
+          </div>
+          <div class="tablewrap">
+            <table class="table" id="scheduleTable">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Shift</th>
+                  <th>Rooms</th>
+                  <th class="right">Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p class="muted">Rooms drive slot count: rooms × 2 faculty.</p>
+        </div>
+
+        <div class="card">
+          <h2>Add / Update Schedule</h2>
+          <div class="row">
+            <input type="date" id="schedDate" class="input" />
+            <select id="schedShift" class="input">
+              <option value="M">M (Morning)</option>
+              <option value="E">E (Evening)</option>
+            </select>
+          </div>
+          <div class="row">
+            <input type="number" id="schedRooms" class="input" min="1" max="15" value="15" />
+            <button class="btn primary" id="btnScheduleUpsert">Save</button>
+          </div>
+
+          <hr />
+          <h3>Bulk Add (CSV)</h3>
+          <p class="muted">Format: <span class="mono">YYYY-MM-DD,M,15</span> (one per line)</p>
+          <textarea id="scheduleBulk" class="input" rows="6" placeholder="2026-01-05,M,15"></textarea>
+          <div class="row">
+            <button class="btn" id="btnScheduleBulkAdd">Add All</button>
+            <button class="btn ghost" id="btnScheduleBulkClear">Clear</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="tab-assign">
+      <div class="card">
+        <h2>Assign Duties</h2>
+        <div class="grid3">
+          <div>
+            <label class="label">Exam Date</label>
+            <input type="date" id="assignDate" class="input" />
+          </div>
+          <div>
+            <label class="label">Shift</label>
+            <select id="assignShift" class="input">
+              <option value="M">M (Morning)</option>
+              <option value="E">E (Evening)</option>
+            </select>
+          </div>
+          <div>
+            <label class="label">Rooms Required (1..15)</label>
+            <input type="number" id="assignRooms" class="input" min="1" max="15" placeholder="auto from schedule (if exists)" />
+          </div>
+        </div>
+
+        <div class="row between">
+          <div>
+            <label class="check">
+              <input type="checkbox" id="assignOverwrite" checked />
+              Overwrite existing allocations for this Date+Shift
+            </label>
+            <div class="muted small">Algorithm: fairness (min total duties) + minimize same-date cross-shift duplicates (penalized, not forbidden).</div>
+          </div>
+          <button class="btn primary" id="btnRunAssign">Run Assignment</button>
+        </div>
+
+        <hr />
+        <h3>Restrict Faculty for this run</h3>
+        <div class="row">
+          <input id="restrictSearch" class="input" placeholder="Search..." />
+          <button class="btn" id="btnRestrictSelectNone">Select None</button>
+          <button class="btn" id="btnRestrictSelectAll">Select All</button>
+        </div>
+        <div class="checks" id="restrictList"></div>
+      </div>
+    </section>
+
+    <section class="panel" id="tab-reports">
+      <div class="grid2">
+        <div class="card">
+          <h2>Reports</h2>
+          <div class="grid3">
+            <div>
+              <label class="label">Exam Date</label>
+              <input type="date" id="repDate" class="input" />
+            </div>
+            <div>
+              <label class="label">Shift</label>
+              <select id="repShift" class="input">
+                <option value="M">M</option>
+                <option value="E">E</option>
+              </select>
+            </div>
+            <div class="row end">
+              <button class="btn" id="btnLoadReport">Load</button>
+            </div>
+          </div>
+
+          <div class="row">
+            <button class="btn" id="btnExportRoomwiseCsv">Export RoomWise CSV</button>
+            <button class="btn" id="btnExportDuty01Csv">Export Duty01 CSV</button>
+            <button class="btn ghost" id="btnExportAllCsv">Export ALL (set)</button>
+          </div>
+
+          <hr />
+          <h3>Room-wise (selected)</h3>
+          <div class="tablewrap">
+            <table class="table" id="roomwiseTable">
+              <thead>
+                <tr><th>Room</th><th>Faculty 1</th><th>Faculty 2</th><th>Note</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p class="muted small">Duplicates across shifts on same date are penalized; if still used, they appear in notes.</p>
+        </div>
+
+        <div class="card">
+          <h2>Totals</h2>
+          <div class="row">
+            <button class="btn" id="btnExportTotalsCsv">Export Totals CSV</button>
+          </div>
+          <div class="tablewrap">
+            <table class="table" id="totalsTable">
+              <thead><tr><th>Faculty</th><th class="right">Total Duties</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <hr />
+          <h3>Duty01 View (preview)</h3>
+          <div class="muted small">Shows 1 if assigned on a Date+Shift (based on Schedule columns).</div>
+          <div class="tablewrap" style="max-height: 360px;">
+            <table class="table" id="duty01Table">
+              <thead></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="muted small">Data is saved in your browser (localStorage). Use Backup/Restore for sharing/moving data.</div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
